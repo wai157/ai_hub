@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI HUB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/images/logo.png') }}" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: {
+                    'sans': ['Poppins', 'sans-serif'],
+                },
+                extend: {
+                    colors: {
+                        'text': '#021515',
+                        'background': '#f3fefe',
+                        'primary': '#2eeae9',
+                        'secondary': '#8acaf3',
+                        'accent': '#5c96ef',
+                       },
+                }
+            }
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+</head>
+<body class="w-screen h-screen flex flex-col text-text divide-y divide-accent">
+    <!-- navbar -->
+    <nav class="w-full h-16 bg-background">
+        <a class="flex items-center pl-4 h-full overflow-y-hidden" href="/">
+            <img src="{{ url_for('static', filename='/images/logo.png') }}" class="h-36 w-auto top-3" alt="AI HUB Logo" loading="lazy" />
+        </a>
+    </nav>
+
+    <!-- main -->
+    {% block body %}
+    {% endblock %}
+
+    <!-- footer -->
+    <footer class="w-full h-20 bg-background text-center pt-2 pb-1 text-text">
+        <div class="h-full flex flex-col justify-center gap-2 text-center">
+            <a class="self-center" href="https://github.com/wai157/ai_hub" target="_blank">
+                <img class="max-w-6 h-auto" src="{{ url_for('static', filename='/images/github.png') }}" alt="github">
+            </a>
+            <p>© 2024 AI HUB</p>
+    </footer>
+</body>
+</html>

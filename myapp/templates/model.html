@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <div class="flex-1 flex gap-4 p-8">
+        <div class="flex flex-col shrink-0 justify-start items-left gap-4 w-1/3 h-full border-2 rounded-xl p-8 overflow-y-auto">
+            <p class="font-bold text-3xl">{{ model.name }}</p>
+            <div class="flex flex-wrap">
+            <p class="text-xs rounded-full border-2 border-primary text-center w-fit h-fit px-4 py-1">{{ model.task }}</p>
+                {% for tag in model.tags %}
+                    <p class="text-xs rounded-full border-2 border-accent text-center w-fit h-fit px-4 py-1">{{ tag }}</p>
+                {% endfor %}
+            </div>
+            <p class="text-xl text-wrap">{{ model.description }}</p>
+        </div>
+        <div class="flex-1 flex flex-col gap-4">
+            {% if model.input_type == "text" %}
+                <textarea id="input" class="w-full h-4/10 p-4 flex-1 border-2 rounded-xl" placeholder="Your sentence here..."></textarea>
+            {% elif model.input_type == "audio" or model.input_type == "image" %}
+                <input type="file" id="input" class="
+                w-fit h-fit
+                file:cursor-pointer
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100" accept="{{ model.input_type }}/*">
+            {% elif model.input_type == "conversation" %}
+                <div class="w-full h-80 flex-auto p-4 border-2 overflow-y-auto overflow-x-hidden rounded-xl flex flex-col-reverse" id="chatbox"></div>
+                <input class="w-full h-12 rounded-full border-2 border-text px-4 py-2" type="text" id="input" placeholder="Your sentence here...">
+            {% endif %}
+            <button id="compute" onclick="compute()" class="w-40 h-10 border rounded-xl shadow-lg px-2 text-text bg-primary font-bold hover:bg-secondary hover:-translate-y-1 hover:ease-in hover:duration-100 ease-in duration-100">Send</button>
+            {% if model.output_type == "text" %}
+                <p id="output" class="w-full h-4/10 p-4 flex-1 border-2 rounded-xl"></p>
+            {% elif model.output_type == "classes" %}
+                <div id="output" class="w-full h-4/10 p-4 flex-1 border-2 rounded-xl flex flex-col justify-start p-4 gap-4 overflow-y-auto"></div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        function compute() {
+            var input_type = "{{ model.input_type }}";
+            var output_type = "{{ model.output_type }}";
+            var jqxhr;
+            if (input_type == "text") {
+                jqxhr = send_text();
+            } 
+            else if (input_type == "audio" || input_type == "image"){
+                jqxhr = send_file();
+            } 
+            else if (input_type == "conversation") {
+                jqxhr = send_chat();
+            }
+            $("#compute").prop('disabled', true);
+            jqxhr.done(parse_response).fail(function(response) {
+                $("#output").text(response.responseText);
+                $("#compute").prop('disabled', false);
+            });
+        }
+    </script>
+    <script>
+        function parse_response(response) {
+            var output = $("#output");
+            var chatbox = $("#chatbox");
+            console.log(response);
+            if (response.type == "text") {
+                output.text(response.data);
+            } 
+            else if (response.type == "classes") {
+                output.html("");
+                console.log(1);
+                for (var i = 0; i < response.data.length; i++) {
+                    output.html(output.html() + "<div class=\"rounded-full border-2 border-accent text-center w-full h-12 grow-0 shrink-0 px-4 py-1 flex justify-between items-center bg-gradient-to-r from-accent to-[" + (response.data[i]["score"]*100).toFixed(3) +"%]\"> <p>" 
+                        + response.data[i]["label"] + "</p>" + "<p>" + response.data[i]["score"].toFixed(3) + "</p> </div>");
+                }
+            } 
+            else if (response.type == "conversation") {
+                console.log(response.data);
+                chatbox.html("<p class=\"text-left text-wrap max-w-[90%] w-fit h-fit py-2 px-4 rounded-3xl bg-slate-200 text-text mt-2 self-start\">" + response.data + "</p>" + chatbox.html());
+            }
+            
+            $("#compute").prop('disabled', false);
+        }
+    </script>
+    <script>
+        function send_text() {
+            var input = $("#input").val();
+            var output = $("#output");
+            if (input.trim() == "") {
+                output.text("Please enter some text.");
+                $("#compute").prop('disabled', false);
+                return;
+            }
+            output.text("Computing...");
+            return $.ajax({
+                type: "POST",
+                url: "/models/{{ model.name }}",
+                data: JSON.stringify({input: input}),
+                contentType: "application/json",
+                dataType: "json"
+            });
+        }
+        function send_file() {
+            var input = $("#input")[0].files[0];
+            var output = $("#output");
+            if (input == undefined) {
+                output.text("Please select a file.");
+                $("#compute").prop('disabled', false);
+                return;
+            }
+            output.text("Computing...");
+            var formData = new FormData();
+            formData.append("input", input);
+            return $.ajax({
+                type: "POST",
+                url: "/models/{{ model.name }}",
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: "json"
+            });
+        }
+        function send_chat() {
+            var input = $("#input").val().trim();
+            var output = $("#output");
+            var chatbox = $("#chatbox");
+            if (input == "") {
+                $("#compute").prop('disabled', false);
+                return;
+            }
+            var chat = [];
+            chatbox.html("<p class=\"text-left text-wrap max-w-[90%] w-fit h-fit py-2 px-4 rounded-3xl bg-blue-600 text-white mt-2 self-end\">" + input + "</p>" + chatbox.html());
+            chatbox.children().filter(function() {
+                chat.push($(this).text());
+            });
+            $("#input").val("");
+            return $.ajax({
+                type: "POST",
+                url: "/models/{{ model.name }}",
+                data: JSON.stringify({input: chat}),
+                contentType: "application/json",
+                dataType: "json"
+            });
+        }
+    </script>
+    <script>
+        $(document).on('keypress',function(e) {
+            if(e.which == 13) {
+                $("#compute").trigger("click");
+            }
+        });
+    </script>
+{% endblock %}

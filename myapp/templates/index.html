@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <div class="flex w-full h-full">
+        <div class="flex w-1/3 h-full shadow-lg flex flex-col justify-start p-8 bg-gradient-to-r from-background">
+            <div class="flex justify-start content-center w-full h-8">
+                <input class="w-full h-full rounded-full border-2 border-text px-4 py-2" type="text" id="search">
+            </div>
+            <div class="flex gap-2 pt-4 flex-wrap">
+                {% for task in tasks %}
+                    <div class="task bg-white text-xs rounded-full border-2 border-accent text-center w-fit h-fit px-4 py-1 cursor-pointer hover:bg-blue-200">{{ task.name }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="flex-1 flex flex-wrap content-start gap-4 p-8">
+            {% for model in models %}
+                <a href="models/{{ model.name }}" class="model relative group w-[30vw] h-16 rounded-xl shadow-lg flex flex-col justify-center px-4 hover:bg-background hover:-translate-y-1 hover:ease-in hover:duration-100 ease-in duration-100 border">
+                    <div class="absolute w-full h-full opacity-0">
+                    </div>
+                    <p class="model-name group-hover:text-accent font-bold">
+                        {{ model.name }}
+                    </p>
+                    <p class="model-task text-slate-500 text-sm">
+                        {{ model.task }}
+                    </p>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        var tasks = [];
+        $("#search").on("keyup", function() {
+            var value = $(this).val().toLowerCase().trim();
+            $(".model").filter(function() {
+                model_name = $(this).children(".model-name").text().toLowerCase().trim();
+                model_task = $(this).children(".model-task").text().toLowerCase().trim();
+                if (tasks.length == 0) {
+                    (model_name.indexOf(value) > -1) ? $(this).show() : $(this).hide();
+                    return;
+                }
+                ((model_name.indexOf(value) > -1) && tasks.includes(model_task)) ? $(this).show() : $(this).hide();
+            });
+        });
+        $(".task").on("click", function() {
+            if ($(this).hasClass("bg-secondary")) {
+                $(this).removeClass("bg-secondary");
+                tasks = tasks.filter(task => task != $(this).text().toLowerCase().trim());
+            } else {
+                $(this).addClass("bg-secondary");
+                tasks.push($(this).text().toLowerCase().trim());
+            }
+            if (tasks.length == 0) {
+                $(".model").show();
+                return;
+            }
+            var value = $("#search").val().toLowerCase();
+            $(".model").filter(function() {
+                model_name = $(this).children(".model-name").text().toLowerCase().trim();
+                model_task = $(this).children(".model-task").text().toLowerCase().trim();
+                ((model_name.indexOf(value) > -1) && tasks.includes(model_task)) ? $(this).show() : $(this).hide();
+            });
+        });
+    </script>
+{% endblock %}
