@@ -15,6 +15,7 @@ def compute(model_name):
     headers = {"Authorization": f"Bearer {current_app.config['HF_TOKEN']}"}
     base_url = current_app.config["API_URL"]
     url = base_url + "/" + model_name
+    timeout = 120
     
     try:
         if model_name=="facebook/bart-large-cnn":
@@ -23,7 +24,8 @@ def compute(model_name):
                 headers=headers,
                 json={
                     "inputs": request.json["input"]
-                }
+                },
+                timeout=timeout
             )
             if response.status_code == 200:
                 output = response.json()[0]["summary_text"]
@@ -37,7 +39,8 @@ def compute(model_name):
             response = requests.post(
                 url=url,
                 headers=headers,
-                data=file
+                data=file,
+                timeout=timeout
             )
             if response.status_code == 200:
                 data = {
@@ -50,7 +53,8 @@ def compute(model_name):
             response = requests.post(
                 url=url,
                 headers=headers,
-                data=file
+                data=file,
+                timeout=timeout
             )
             if response.status_code == 200:
                 data = {
@@ -63,7 +67,8 @@ def compute(model_name):
             response = requests.post(
                 url=url,
                 headers=headers,
-                data=file
+                data=file,
+                timeout=timeout
             )
             if response.status_code == 200:
                 data = {
@@ -82,12 +87,60 @@ def compute(model_name):
                 headers=headers,
                 json={
                     "inputs": chat
-                }
+                },
+                timeout=timeout
             )
             if response.status_code == 200:
                 data = {
                     "type": "conversation",
                     "data": response.json()[0]['generated_text'].split("<|start_header_id|>assistant<|end_header_id|>")[-1].strip(),
+                }
+        elif model_name=="openai/whisper-large-v3":
+            file = request.files["input"].read()
+            response = requests.post(
+                url=url,
+                headers=headers,
+                data=file,
+                timeout=timeout
+            )
+            if response.status_code == 200:
+                output = response.json()["text"]
+                data = {
+                    "type": "text",
+                    "data": output,
+                }
+        elif model_name=="stabilityai/stable-diffusion-xl-base-1.0":
+            response = requests.post(
+                url=url,
+                headers=headers,
+                json={
+                    "inputs": request.json["input"]
+                },
+                timeout=timeout
+            )
+            if response.status_code == 200:
+                output = response.content
+                output = list(output)
+                data = {
+                    "type": "image",
+                    "data": output,
+                }
+        elif model_name=="facebook/detr-resnet-50":
+            file = request.files["input"].read()
+            response = requests.post(
+                url=url,
+                headers=headers,
+                data=file,
+                timeout=timeout
+            )
+            if response.status_code == 200:
+                boxes = response.json()
+                for box in boxes:
+                    box["box"]["width"] = box["box"]["xmax"] - box["box"]["xmin"]
+                    box["box"]["height"] = box["box"]["ymax"] - box["box"]["ymin"]
+                data = {
+                    "type": "image_classes",
+                    "data": boxes,
                 }
         
         
@@ -99,4 +152,5 @@ def compute(model_name):
             print(response)
             return "An error occurred.", 404
     except Exception as e:
+        print(e)
         return "An error occurred.", 500
