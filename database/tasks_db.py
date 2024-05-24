@@ -3,6 +3,8 @@ from .config import SessionLocal
 
 class Task_Mapper:
     def __init__(self, task: Task):
+        if not task:
+            return None
         for key, value in task.serialize().items():
             setattr(self, key, value)
 

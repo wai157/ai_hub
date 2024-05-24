@@ -1,4 +1,4 @@
-from flask import current_app, Blueprint, render_template, request
+from flask import current_app, Blueprint, render_template, request, url_for, redirect
 from database import models_db
 import requests
 import json
@@ -8,7 +8,10 @@ router = Blueprint('models', __name__, url_prefix='/models')
 @router.route('/<path:model_name>', methods=['GET'])
 def get_model(model_name):
     model = models_db.get_model(model_name)
-    return render_template('model.html', model=model)
+    if model:
+        return render_template('model.html', model=model)
+    else:
+        return "Model not found!", 404
 
 @router.route('/<path:model_name>', methods=['POST'])
 def compute(model_name):
@@ -18,7 +21,21 @@ def compute(model_name):
     timeout = 120
     
     try:
-        if model_name=="facebook/bart-large-cnn":
+        if model_name == "custom-model":
+            response = requests.post(
+                url=url_for("custom_model.model"),
+                json={
+                    "inputs": request.json["input"]
+                },
+                timeout=timeout
+            )
+            if response.status_code == 200:
+                output = response.json()["data"]
+                data = {
+                    "type": "text",
+                    "data": output,
+                }
+        elif model_name == "facebook/bart-large-cnn":
             response = requests.post(
                 url=url,
                 headers=headers,
@@ -34,7 +51,7 @@ def compute(model_name):
                     "data": output,
                 }
         
-        elif model_name=="MIT/ast-finetuned-audioset-10-10-0.4593":
+        elif model_name == "MIT/ast-finetuned-audioset-10-10-0.4593":
             file = request.files["input"].read()
             response = requests.post(
                 url=url,
@@ -48,7 +65,7 @@ def compute(model_name):
                     "data": response.json(),
                 }
         
-        elif model_name=="superb/hubert-large-superb-er":
+        elif model_name == "superb/hubert-large-superb-er":
             file = request.files["input"].read()
             response = requests.post(
                 url=url,
@@ -62,7 +79,7 @@ def compute(model_name):
                     "data": response.json(),
                 }
             
-        elif model_name=="google/vit-base-patch16-224":
+        elif model_name == "google/vit-base-patch16-224":
             file = request.files["input"].read()
             response = requests.post(
                 url=url,
@@ -75,7 +92,7 @@ def compute(model_name):
                     "type": "classes",
                     "data": response.json(),
                 }
-        elif model_name=="meta-llama/Meta-Llama-3-8B-Instruct":
+        elif model_name == "meta-llama/Meta-Llama-3-8B-Instruct":
             chat = "<|begin_of_text|>"
             count = 1
             for text in request.json["input"][::-1]:
@@ -95,7 +112,7 @@ def compute(model_name):
                     "type": "conversation",
                     "data": response.json()[0]['generated_text'].split("<|start_header_id|>assistant<|end_header_id|>")[-1].strip(),
                 }
-        elif model_name=="openai/whisper-large-v3":
+        elif model_name == "openai/whisper-large-v3":
             file = request.files["input"].read()
             response = requests.post(
                 url=url,
@@ -109,7 +126,7 @@ def compute(model_name):
                     "type": "text",
                     "data": output,
                 }
-        elif model_name=="stabilityai/stable-diffusion-xl-base-1.0":
+        elif model_name == "stabilityai/stable-diffusion-xl-base-1.0":
             response = requests.post(
                 url=url,
                 headers=headers,
@@ -125,7 +142,7 @@ def compute(model_name):
                     "type": "image",
                     "data": output,
                 }
-        elif model_name=="facebook/detr-resnet-50":
+        elif model_name == "facebook/detr-resnet-50":
             file = request.files["input"].read()
             response = requests.post(
                 url=url,

@@ -3,6 +3,8 @@ from .config import SessionLocal
 
 class Model_Mapper:
     def __init__(self, model: Model):
+        if not model:
+            return None
         for key, value in model.serialize().items():
             setattr(self, key, value)
 

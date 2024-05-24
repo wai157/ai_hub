@@ -5,14 +5,14 @@
     <div class="flex w-[80vw] h-[75vh] border-2 border-accent bg-secondary rounded-2xl p-4">
         <div id="models" class="flex basis-10/12 h-full flex-1 flex-col overflow-y-scroll gap-4 p-2 items-center">
             <div class="model flex flex-none justify-between items-center p-4 w-full h-[10vh] bg-background rounded-xl border">
-                <select class="w-2/5 h-[5vh] rounded-xl border-2 border-text p-2" name="" id="" onchange="changemodel(this)">
-                    <option selected disabled>Select a model</option>
+                <select class="w-2/5 h-[5vh] rounded-xl border-2 border-text p-2" title="" onchange="changemodel(this)">
+                    <option value="" selected disabled>Select a model</option>
                     {% for model in models %}
-                    <option value="{{ model.name }} {{model.input_type}} {{model.output_type}}">{{ model.name }}</option>
+                    <option value="{{ model.name }}|{{ model.input_type }}|{{ model.output_type }}|{{ model.description }}" title="{{ model.description }}">{{ model.name }}</option>
                     {% endfor %}
                 </select>
-                <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
-                <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
+                <input class="input-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
+                <input class="output-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
                 <button class="w-[5vh] h-[5vh]" onclick="delmodel(this)">
                     <i class="fa-solid fa-xmark fa-2xl" style="color: #fa1414;"></i>
                 </button>
@@ -21,7 +21,10 @@
                 <i class="fa-solid fa-plus fa-2xl" style="color: #2ce2ac;"></i>
             </button>
         </div>
-        <div class="basis-2/12 flex flex-none justify-center items-end w-full h-1/12 bottom-0 right-4 bottom-4">
+        <div class="basis-2/12 flex flex-none flex-col justify-between items-center w-full h-1/12 bottom-0 right-4 bottom-4">
+            <p class="text-text text-left p-2">
+                Next model's input type need to be the same as previous model's output type to be valid
+            </p>
             <button id="generate-btn" class="flex justify-center items-center w-40 h-10 border rounded-xl shadow-lg px-2 text-text bg-background font-bold hover:bg-primary hover:-translate-y-1 hover:ease-in hover:duration-100 ease-in duration-100" onclick="generate()">
                 Generate
             </button>
@@ -39,24 +42,24 @@
         e.parentElement.remove();
     }
     function changemodel(e) {
-        console.log(e.value);
-        var data = e.value.split(" ");
+        var data = e.value.split("|");
         e.nextElementSibling.value = data[1];
         e.nextElementSibling.nextElementSibling.value = data[2];
+        e.title = data[3]
     }
     function addmodel() {
-        model_list = $(".model");
-        if (model_list.length == 0) {
+        models = $(".model");
+        if (models.length == 0) {
             $("#add-btn").before(`
                 <div class="model flex flex-none justify-between items-center p-4 w-full h-[10vh] bg-background rounded-xl border">
                     <select class="w-2/5 h-[5vh] rounded-xl border-2 border-text p-2" name="" id="" onchange="changemodel(this)">
-                        <option selected disabled>Select a model</option>
+                        <option value="" selected disabled>Select a model</option>
                         {% for model in models %}
-                        <option value="{{ model.name }} {{model.input_type}} {{model.output_type}}">{{ model.name }}</option>
+                        <option value="{{ model.name }}|{{ model.input_type }}|{{ model.output_type }}|{{ model.description }}" title="{{ model.description }}">{{ model.name }}</option>
                         {% endfor %}
                     </select>
-                    <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
-                    <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
+                    <input class="input-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
+                    <input class="output-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
                     <button class="w-[5vh] h-[5vh]" onclick="delmodel(this)">
                         <i class="fa-solid fa-xmark fa-2xl" style="color: #fa1414;"></i>
                     </button>
@@ -68,13 +71,13 @@
                 <i class="fa-solid fa-chevron-down fa-2xl"></i>
                 <div class="model flex flex-none justify-between items-center p-4 w-full h-[10vh] bg-background rounded-xl border">
                     <select class="w-2/5 h-[5vh] rounded-xl border-2 border-text p-2" name="" id="" onchange="changemodel(this)">
-                        <option selected disabled>Select a model</option>
+                        <option value="" selected disabled>Select a model</option>
                         {% for model in models %}
-                        <option value="{{ model.name }} {{model.input_type}} {{model.output_type}}">{{ model.name }}</option>
+                        <option value="{{ model.name }}|{{ model.input_type }}|{{ model.output_type }}|{{ model.description }}" title="{{ model.description }}">{{ model.name }}</option>
                         {% endfor %}
                     </select>
-                    <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
-                    <input class="w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
+                    <input class="input-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="input type" disabled>
+                    <input class="output-type w-1/5 h-[5vh] rounded-xl border-2 border-text p-2" type="text" placeholder="output type" disabled>
                     <button class="w-[5vh] h-[5vh]" onclick="delmodel(this)">
                         <i class="fa-solid fa-xmark fa-2xl" style="color: #fa1414;"></i>
                     </button>
@@ -87,6 +90,42 @@
         compute_btn.attr("disabled", true);
         compute_btn.text("");
         compute_btn.append("<div class=\"loader\"></div>");
+
+        models = $("select").map(function() {
+            return this.value.split("|")[0];
+        }).get();
+        if (models.find(function(name) {
+            return name==""
+        }) == undefined) {
+            input_types = $(".input-type").map(function() {
+            return this.value;
+            }).get();
+            output_types = $(".output-type").map(function() {
+                return this.value;
+            }).get();
+            console.log(JSON.stringify(input_types.slice(1)) == JSON.stringify(output_types.slice(0, -1)));
+            if (JSON.stringify(input_types.slice(1)) == JSON.stringify(output_types.slice(0, -1))) {
+                var newForm = $("<form>", {
+                    "action": "http://127.0.0.1:3000/custom-model/generate",
+                    "target": "_top",
+                    "method": "POST"
+                }).append($("<input>", {
+                    "name": "models",
+                    "value": JSON.stringify(models)
+                })).append($("<input>", {
+                    "name": "input_types",
+                    "value": JSON.stringify(input_types)
+                })).append($("<input>", {
+                    "name": "output_types",
+                    "value": JSON.stringify(output_types)
+                }));
+                newForm.appendTo("body").submit().remove();
+            }
+        }
+
+        compute_btn.text("Generate");
+        compute_btn.attr("disabled", false);
+        compute_btn.children().remove();
     }
 </script>
 <script src="https://kit.fontawesome.com/ed1ca4eb12.js" crossorigin="anonymous"></script>
