@@ -8,8 +8,10 @@ def create_app():
     
     from .routers import root
     from .routers import models
+    from .routers import custom_model
     
     app.register_blueprint(root.router)
     app.register_blueprint(models.router)
+    app.register_blueprint(custom_model.router)
     
     return app
