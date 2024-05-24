@@ -96,7 +96,7 @@
         }).get();
         if (models.find(function(name) {
             return name==""
-        }) == undefined) {
+        }) == undefined && models.length > 1) {
             input_types = $(".input-type").map(function() {
             return this.value;
             }).get();
@@ -122,11 +122,11 @@
                 newForm.appendTo("body").submit().remove();
             }
         }
-
+        toastr.error("Invalid model sequence");
         compute_btn.text("Generate");
         compute_btn.attr("disabled", false);
         compute_btn.children().remove();
     }
 </script>
-<script src="https://kit.fontawesome.com/ed1ca4eb12.js" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='/js/fontawesome.js') }}"></script>
 {% endblock %}

@@ -15,15 +15,30 @@
         <div class="flex-1 flex flex-col gap-4 w-2/3">
             {% if model.input_type == "text" %}
             <textarea id="input" class="w-full basis-1/12 p-4 flex-1 border-2 rounded-xl" placeholder="Your sentence here..."></textarea>
-            {% elif model.input_type == "audio" or model.input_type == "image" %}
-            <input type="file" id="input" class="
-            w-fit h-fit
-            file:cursor-pointer
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100" accept="{{ model.input_type }}/*">
+            {% elif model.input_type == "audio"%}
+            <div class="w-full basis-1/12 p-4 border-2 rounded-xl flex items-center">
+                <input type="file" id="input" class="
+                w-fit h-fit
+                file:cursor-pointer
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100" accept="{{ model.input_type }}/*" onchange="changeFile()">
+                <audio id="audio-input" class="w-[20vw] h-8 border-2 rounded-xl" str="" controls></audio>
+            </div>
+            {% elif model.input_type == "image" %}
+            <div class="w-full basis-1/12 p-4 border-2 rounded-xl flex items-start   ">
+                <input type="file" id="input" class="
+                w-fit h-fit
+                file:cursor-pointer
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100" accept="{{ model.input_type }}/*" onchange="changeFile()">
+                <img id="image-input" class="max-w-[15vw] w-[15vw] h-auto" src="" alt="">
+            </div>
             {% elif model.input_type == "conversation" %}
             <div class="w-full max-w-full h-80 grow p-4 border-2 overflow-y-auto overflow-x-hidden rounded-xl flex flex-col-reverse" id="chatbox"></div>
             <input class="w-full h-12 rounded-full border-2 border-text px-4 py-2" type="text" id="input" placeholder="Your sentence here...">
@@ -69,7 +84,7 @@
                 jqxhr = send_chat();
             }
             jqxhr.done(parse_response).fail(function(response) {
-                $("#output").text(response.responseText);
+                toastr.error(response.responseText);
                 compute_btn.text("Compute");
                 compute_btn.attr("disabled", false);
                 compute_btn.children().remove();
@@ -109,7 +124,7 @@
                 var data = response.data;
                 console.log(data);
                 for (var i = 0; i < data.length; i++) {
-                    output.append("<div class=\"class-box absolute w-["+data[i].box.width+"px] h-["+data[i].box.height+"px] left-["+data[i].box.xmin+"px] top-["+data[i].box.ymin+"px] bg-"+colors[i%5]+"-200 opacity-30 border-2 border-"+colors[i%5]+"-600\"></div>")
+                    output.append("<div class=\"class-box absolute w-["+data[i].box.width+"px] h-["+data[i].box.height+"px] left-["+data[i].box.xmin+"px] top-["+data[i].box.ymin+"px] bg-"+colors[i%5]+"-200 opacity-30 border-2 border-"+colors[i%5]+"-600\" title=\""+data[i].label+" "+data[i].score+"\"></div>")
                 }
                 var class_boxes = $(".class-box");
                 class_boxes.hover(function() {
@@ -122,6 +137,7 @@
                     class_boxes.css("opacity", "0.4");
                 });
             }
+            toastr.success("Success");
             var compute_btn = $("#compute-btn");
             compute_btn.text("Compute");
             compute_btn.attr("disabled", false);
@@ -133,7 +149,7 @@
             var input = $("#input").val();
             var output = $("#output");
             if (input.trim() == "") {
-                output.text("Please enter some text.");
+                toastr.warning("Please enter some text.");
                 var compute_btn = $("#compute-btn");
                 compute_btn.text("Compute");
                 compute_btn.attr("disabled", false);
@@ -152,7 +168,7 @@
             var input = $("#input")[0].files[0];
             var output = $("#output");
             if (input == undefined) {
-                output.text("Please select a file.");
+                toastr.warning("Please select a file.");
                 var compute_btn = $("#compute-btn");
                 compute_btn.text("Compute");
                 compute_btn.attr("disabled", false);
@@ -194,6 +210,20 @@
                 contentType: "application/json",
                 dataType: "json"
             });
+        }
+    </script>
+    <script>
+        function changeFile() {
+            var input = $("#input")[0];
+            var file = input.files[0];
+            var src = URL.createObjectURL(file);
+            {% if model.input_type == "audio" %}
+            var audio = $("#audio-input");
+            audio.attr("src", src);
+            {% elif model.input_type == "image" %}
+            var image = $("#image-input");
+            image.attr("src", src);
+            {% endif %}
         }
     </script>
 {% endblock %}

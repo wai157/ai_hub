@@ -1,4 +1,4 @@
-from flask import current_app, Blueprint, render_template, request, url_for, redirect
+from flask import session, current_app, Blueprint, render_template, request, url_for, redirect
 from database import models_db
 import requests
 import json
@@ -22,151 +22,224 @@ def compute(model_name):
     
     try:
         if model_name == "custom-model":
-            response = requests.post(
-                url=url_for("custom_model.model"),
-                json={
-                    "inputs": request.json["input"]
-                },
-                timeout=timeout
-            )
+            if session.get('models') is None:
+                return "Model not found!", 404
+            input_type = session.get("input_types")[0]
+            headers.update({
+                "models": json.dumps(session.get('models')),
+                "input-types": json.dumps(session.get("input_types")),
+                "output-types": json.dumps(session.get("output_types"))
+            })
+            if input_type == "text":
+                response = requests.post(
+                    url="http://127.0.0.1:3000"+url_for("custom_model.model"),
+                    headers=headers,
+                    json={
+                        "input": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+            elif input_type == "image" or input_type == "audio":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url="http://127.0.0.1:3000"+url_for("custom_model.model"),
+                    headers=headers,
+                    files={"input": file},
+                    timeout=timeout
+                )
             if response.status_code == 200:
-                output = response.json()["data"]
-                data = {
-                    "type": "text",
-                    "data": output,
-                }
-        elif model_name == "facebook/bart-large-cnn":
-            response = requests.post(
-                url=url,
-                headers=headers,
-                json={
-                    "inputs": request.json["input"]
-                },
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                output = response.json()[0]["summary_text"]
-                data = {
-                    "type": "text",
-                    "data": output,
-                }
-        
-        elif model_name == "MIT/ast-finetuned-audioset-10-10-0.4593":
-            file = request.files["input"].read()
-            response = requests.post(
-                url=url,
-                headers=headers,
-                data=file,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                data = {
-                    "type": "classes",
-                    "data": response.json(),
-                }
-        
-        elif model_name == "superb/hubert-large-superb-er":
-            file = request.files["input"].read()
-            response = requests.post(
-                url=url,
-                headers=headers,
-                data=file,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                data = {
-                    "type": "classes",
-                    "data": response.json(),
-                }
+                data = response.json()
+
+        else:
+            model = models_db.get_model(model_name)
+            model_task = model.task
             
-        elif model_name == "google/vit-base-patch16-224":
-            file = request.files["input"].read()
-            response = requests.post(
-                url=url,
-                headers=headers,
-                data=file,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                data = {
-                    "type": "classes",
-                    "data": response.json(),
-                }
-        elif model_name == "meta-llama/Meta-Llama-3-8B-Instruct":
-            chat = "<|begin_of_text|>"
-            count = 1
-            for text in request.json["input"][::-1]:
-                chat += f"<|start_header_id|>{"user" if count%2 else "assistant"}<|end_header_id|>\n\n{text}<|eot_id|>"
-                count+=1
-            chat += "<|start_header_id|>assistant<|end_header_id|>\n\n"
-            response = requests.post(
-                url=url,
-                headers=headers,
-                json={
-                    "inputs": chat
-                },
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                data = {
-                    "type": "conversation",
-                    "data": response.json()[0]['generated_text'].split("<|start_header_id|>assistant<|end_header_id|>")[-1].strip(),
-                }
-        elif model_name == "openai/whisper-large-v3":
-            file = request.files["input"].read()
-            response = requests.post(
-                url=url,
-                headers=headers,
-                data=file,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                output = response.json()["text"]
-                data = {
-                    "type": "text",
-                    "data": output,
-                }
-        elif model_name == "stabilityai/stable-diffusion-xl-base-1.0":
-            response = requests.post(
-                url=url,
-                headers=headers,
-                json={
-                    "inputs": request.json["input"]
-                },
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                output = response.content
-                output = list(output)
-                data = {
-                    "type": "image",
-                    "data": output,
-                }
-        elif model_name == "facebook/detr-resnet-50":
-            file = request.files["input"].read()
-            response = requests.post(
-                url=url,
-                headers=headers,
-                data=file,
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                boxes = response.json()
-                for box in boxes:
-                    box["box"]["width"] = box["box"]["xmax"] - box["box"]["xmin"]
-                    box["box"]["height"] = box["box"]["ymax"] - box["box"]["ymin"]
-                data = {
-                    "type": "image_classes",
-                    "data": boxes,
-                }
-        
+            if model_task == "Audio Classification":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    data = {
+                        "type": "classes",
+                        "data": response.json(),
+                    }
+            
+            elif model_task == "Automatic Speech Recognition":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.json()["text"]
+                    data = {
+                        "type": "text",
+                        "data": output,
+                    }
+                    
+            elif model_task == "Chatbot":
+                messages: list[dict] = []
+                count = 1
+                for text in request.json["input"][::-1]:
+                    role = "user" if count%2 else "assistant"
+                    content = text
+                    messages.append({"role": role, "content": content})
+                    count+=1
+                response = requests.post(
+                    url=url+"/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": model_name,
+                        "messages": messages,
+                        "stream": False
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    data = {
+                        "type": "conversation",
+                        "data": response.json()["choices"][0]["message"]["content"],
+                    }
+            
+            elif model_task == "Image Classification":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    data = {
+                        "type": "classes",
+                        "data": response.json(),
+                    }
+            
+            elif model_task == "Image to Text":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.json()[0]["generated_text"]
+                    data = {
+                        "type": "text",
+                        "data": output,
+                    }
+            
+            elif model_task == "Object Detection":
+                file = request.files["input"].read()
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    boxes = response.json()
+                    for box in boxes:
+                        box["box"]["width"] = box["box"]["xmax"] - box["box"]["xmin"]
+                        box["box"]["height"] = box["box"]["ymax"] - box["box"]["ymin"]
+                    data = {
+                        "type": "image_classes",
+                        "data": boxes,
+                    }
+                    
+            elif model_task == "Summarization":
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    json={
+                        "inputs": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.json()[0]["summary_text"]
+                    data = {
+                        "type": "text",
+                        "data": output,
+                    }
+            
+            elif model_task == "Text Classification":
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    json={
+                        "inputs": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    data = {
+                        "type": "classes",
+                        "data": response.json()[0],
+                    }
+                    
+            elif model_task == "Text Generation":
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    json={
+                        "inputs": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.json()[0]["generated_text"]
+                    data = {
+                        "type": "text",
+                        "data": output,
+                    }
+            
+            elif model_task == "Text to Image":
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    json={
+                        "inputs": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.content
+                    output = list(output)
+                    data = {
+                        "type": "image",
+                        "data": output,
+                    }
+            
+            elif model_task == "Translation":
+                response = requests.post(
+                    url=url,
+                    headers=headers,
+                    json={
+                        "inputs": request.json["input"]
+                    },
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    output = response.json()[0]["translation_text"]
+                    data = {
+                        "type": "text",
+                        "data": output,
+                    }
+                    
         
         if response.status_code == 200:
             return json.dumps(data)
         elif response.status_code == 503:
                 return "Model is loading, please try again later.", 503
         else:
-            print(response)
             return "An error occurred.", 404
     except Exception as e:
         print(e)
