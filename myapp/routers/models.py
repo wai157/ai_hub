@@ -151,7 +151,10 @@ def compute(model_name):
                         box["box"]["height"] = box["box"]["ymax"] - box["box"]["ymin"]
                     data = {
                         "type": "image_classes",
-                        "data": boxes,
+                        "data": {
+                            "image": list(file),
+                            "boxes": boxes
+                        },
                     }
                     
             elif model_task == "Summarization":

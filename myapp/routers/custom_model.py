@@ -11,7 +11,7 @@ def generate():
     session.clear()
     if request.method == 'GET':
         models = models_db.get_models()
-        models = [model for model in models if model.input_type not in ["conversation", "image_classes"]]
+        models = [model for model in models if model.input_type not in ["conversation"]]
         tasks = tasks_db.get_tasks()
         return render_template('custom_model_gen.html',
                             models=models,
@@ -58,6 +58,8 @@ def model():
         input_types = input_types[1:]
         output_types = output_types[1:]
         for model, input_type, output_type in zip(models, input_types, output_types):
+            if response.status_code == 503:
+                return "Models are loading! Please try again later!", 503
             url = "http://127.0.0.1:3000"+url_for("models.compute", model_name=model)
             if input_type == "text":
                 data = response.json()["data"]

@@ -118,13 +118,11 @@
                 output.html("");
                 output.append("<img src=\"\" alt=\"\" class=\"max-h-full max-w-auto w-auto\">");
                 var img = $("#output > img")[0];
-                var input = $("#input")[0];
-                var file = input.files[0];
-                img.src = URL.createObjectURL(new Blob([file], { type: 'application/octet-stream' }));
                 var data = response.data;
-                console.log(data);
-                for (var i = 0; i < data.length; i++) {
-                    output.append("<div class=\"class-box absolute w-["+data[i].box.width+"px] h-["+data[i].box.height+"px] left-["+data[i].box.xmin+"px] top-["+data[i].box.ymin+"px] bg-"+colors[i%5]+"-200 opacity-30 border-2 border-"+colors[i%5]+"-600\" title=\""+data[i].label+" "+data[i].score+"\"></div>")
+                var file = data.image;
+                img.src = URL.createObjectURL(new Blob([new Uint8Array(file)], { type: 'application/octet-stream' }));
+                for (var i = 0; i < data.boxes.length; i++) {
+                    output.append("<div class=\"class-box absolute w-["+data.boxes[i].box.width+"px] h-["+data.boxes[i].box.height+"px] left-["+data.boxes[i].box.xmin+"px] top-["+data.boxes[i].box.ymin+"px] bg-"+colors[i%5]+"-200 opacity-30 border-2 border-"+colors[i%5]+"-600\" title=\""+data.boxes[i].label+" "+data.boxes[i].score+"\"></div>")
                 }
                 var class_boxes = $(".class-box");
                 class_boxes.hover(function() {
